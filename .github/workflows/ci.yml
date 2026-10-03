@@ -19,7 +19,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '17'  # Adjust to your Java version (8, 11, 17, 21, etc.)
+          java-version: '21'  # Adjust to your Java version (8, 11, 17, 21, etc.)
           distribution: 'temurin'  # or 'adopt', 'zulu', 'corretto'
       
       - name: Cache Maven packages

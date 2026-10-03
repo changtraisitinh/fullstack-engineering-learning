@@ -14,6 +14,7 @@ import { describeApiError } from '@ewallet-lab/ui';
 import { useState } from 'react';
 import { BankTransferForm } from './screens/BankTransferForm';
 import { BankTransferOutStatusScreen } from './screens/BankTransferOutStatusScreen';
+import { FundHome } from './screens/FundHome';
 import { LuckyMoneyHome } from './screens/LuckyMoneyHome';
 import { PaymentLinkCreate } from './screens/PaymentLinkCreate';
 import { PaymentLinkCreated } from './screens/PaymentLinkCreated';
@@ -36,7 +37,9 @@ type Step =
   // Issue #8 — payment-reminder
   | { name: 'payment-reminder' }
   // Issue #10 — lucky money
-  | { name: 'lucky-money' };
+  | { name: 'lucky-money' }
+  // Issue #14 — group fund
+  | { name: 'fund' };
 
 /**
  * Exposed as `./App` (see vite.config.ts). Real P2P transfer — see
@@ -94,6 +97,10 @@ export default function App({
             setStep({ name: 'lucky-money' });
             return;
           }
+          if (feature === 'fund') {
+            setStep({ name: 'fund' });
+            return;
+          }
           onComingSoon(feature);
         }}
       />
@@ -148,6 +155,10 @@ export default function App({
         onBack={() => setStep({ name: 'home' })}
       />
     );
+  }
+
+  if (step.name === 'fund') {
+    return <FundHome session={session} onBack={() => setStep({ name: 'home' })} />;
   }
 
   if (step.name === 'lucky-money') {

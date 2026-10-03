@@ -7,3 +7,6 @@ export * from './vietQrService';
 export * from './billPaymentService';
 export * from './paymentRequestService';
 export * from './luckyMoneyService';
+export * from './bnplService';
+export * from './loyaltyService';
+export * from './fundService';

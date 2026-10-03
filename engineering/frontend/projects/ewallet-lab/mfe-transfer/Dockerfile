@@ -6,6 +6,7 @@
 #   --build-arg VITE_TOPUP_SERVICE_URL=http://api.ewallet-lab.local \
 #   --build-arg VITE_PAYMENT_REQUEST_SERVICE_URL=http://api.ewallet-lab.local \
 #   --build-arg VITE_LUCKY_MONEY_SERVICE_URL=http://api.ewallet-lab.local \
+#   --build-arg VITE_FUND_SERVICE_URL=http://api.ewallet-lab.local \
 #   -t ewallet-lab/mfe-transfer:local .
 FROM node:22-alpine AS build
 WORKDIR /repo
@@ -27,6 +28,9 @@ ENV VITE_TRANSFER_SERVICE_URL=${VITE_TRANSFER_SERVICE_URL}
 ENV VITE_TOPUP_SERVICE_URL=${VITE_TOPUP_SERVICE_URL}
 ENV VITE_PAYMENT_REQUEST_SERVICE_URL=${VITE_PAYMENT_REQUEST_SERVICE_URL}
 ENV VITE_LUCKY_MONEY_SERVICE_URL=${VITE_LUCKY_MONEY_SERVICE_URL}
+# Issue #14: FundHome calls fund-service.
+ARG VITE_FUND_SERVICE_URL
+ENV VITE_FUND_SERVICE_URL=${VITE_FUND_SERVICE_URL}
 RUN npm run build -w mfe-transfer
 
 FROM nginx:1.27-alpine

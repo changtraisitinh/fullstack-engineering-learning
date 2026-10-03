@@ -90,11 +90,6 @@ const COPY: Record<string, { icon: string; title: string; body: string }> = {
     title: 'Chia tiền',
     body: 'Cần theo dõi nhóm/hoá đơn chung — chưa có domain model cho việc này trong lab.',
   },
-  fund: {
-    icon: 'groups',
-    title: 'Quỹ',
-    body: 'Ví chung nhiều thành viên đóng góp — cần domain model và quyền truy cập riêng, chưa có trong lab.',
-  },
 };
 
 export function ComingSoon({ feature, onBack }: { feature: string; onBack: () => void }) {

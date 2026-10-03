@@ -12,6 +12,12 @@ import SvcUser from './SvcUser';
 import SvcWallet from './SvcWallet';
 import TopupFlow from './TopupFlow';
 import WebClient from './WebClient';
+import BizComingSoon from './business/BizComingSoon';
+import BizLimits from './business/BizLimits';
+import BizOverview from './business/BizOverview';
+import BizPayments from './business/BizPayments';
+import BizPersonal from './business/BizPersonal';
+import BizRequests from './business/BizRequests';
 
 /** id -> page component. Every id here must also appear in src/nav.ts (and vice versa). */
 export const PAGES: Record<string, ComponentType> = {
@@ -28,4 +34,11 @@ export const PAGES: Record<string, ComponentType> = {
   'frontend-design': FrontendDesign,
   'deploy-k8s': DeployK8s,
   roadmap: Roadmap,
+  // Business space (issue #17) — ids reserved with the "biz-" prefix, see nav.ts spaceOf().
+  'biz-overview': BizOverview,
+  'biz-limits': BizLimits,
+  'biz-payments': BizPayments,
+  'biz-requests': BizRequests,
+  'biz-personal': BizPersonal,
+  'biz-coming-soon': BizComingSoon,
 };

@@ -1,14 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavContext } from './NavContext';
-import { DEFAULT_PAGE, NAV_GROUPS, isKnownPage } from './nav';
+import { DEFAULT_PAGE, DEFAULT_PAGE_BY_SPACE, type Space, isKnownPage, navFor, spaceOf } from './nav';
 import { PAGES } from './pages';
 
 type Theme = 'system' | 'light' | 'dark';
 const THEME_KEY = 'ewallet-lab-docs-theme';
+const SPACE_KEY = 'ewallet-lab-docs-space';
 
+function readSavedSpace(): Space {
+  try {
+    return localStorage.getItem(SPACE_KEY) === 'business' ? 'business' : 'developer';
+  } catch {
+    return 'developer';
+  }
+}
+
+/** A valid hash wins (its id decides the space); with no hash, open the last-used space. */
 function readInitialPage(): string {
   const fromHash = location.hash.slice(1);
-  return isKnownPage(fromHash) ? fromHash : DEFAULT_PAGE;
+  if (isKnownPage(fromHash)) return fromHash;
+  return location.hash ? DEFAULT_PAGE : DEFAULT_PAGE_BY_SPACE[readSavedSpace()];
 }
 
 export default function App() {
@@ -16,6 +27,9 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>('system');
   const mainRef = useRef<HTMLElement>(null);
+  const space = spaceOf(page);
+  // Last page visited in each space, so switching back returns where you were.
+  const lastPageRef = useRef<Record<Space, string>>({ ...DEFAULT_PAGE_BY_SPACE, [spaceOf(page)]: page });
 
   useEffect(() => {
     try {
@@ -35,6 +49,19 @@ export default function App() {
       // best-effort only
     }
   }, [theme]);
+
+  useEffect(() => {
+    lastPageRef.current[space] = page;
+    try {
+      localStorage.setItem(SPACE_KEY, space);
+    } catch {
+      // best-effort only
+    }
+  }, [page, space]);
+
+  function switchSpace(next: Space) {
+    if (next !== space) navigate(lastPageRef.current[next]);
+  }
 
   function navigate(id: string) {
     if (!isKnownPage(id)) return;
@@ -61,7 +88,9 @@ export default function App() {
         <button onClick={() => setMenuOpen(true)} aria-label="Open navigation">
           ☰ Menu
         </button>
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14 }}>Ewallet Lab Docs</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14 }}>
+          Ewallet Lab {space === 'developer' ? 'Docs' : 'Business'}
+        </span>
       </div>
       <div className={`scrim${menuOpen ? ' show' : ''}`} onClick={() => setMenuOpen(false)} />
 
@@ -69,19 +98,31 @@ export default function App() {
         <aside className={`sidebar${menuOpen ? ' open' : ''}`}>
           <a
             className="brand"
-            href="#overview"
+            href={`#${DEFAULT_PAGE_BY_SPACE[space]}`}
             onClick={(e) => {
               e.preventDefault();
-              navigate(DEFAULT_PAGE);
+              navigate(DEFAULT_PAGE_BY_SPACE[space]);
             }}
           >
             <span className="brand-mark">EL</span>
             <span className="brand-name">Ewallet Lab</span>
           </a>
-          <p className="brand-sub">Developer Docs</p>
+          <div className="space-switch" role="group" aria-label="Không gian tài liệu">
+            {(['developer', 'business'] as const).map((sp) => (
+              <button
+                key={sp}
+                className={space === sp ? 'active' : ''}
+                aria-pressed={space === sp}
+                onClick={() => switchSpace(sp)}
+              >
+                {sp === 'developer' ? 'Developer' : 'Business'}
+              </button>
+            ))}
+          </div>
+          <p className="brand-sub">{space === 'developer' ? 'Developer Docs' : 'Nghiệp vụ sản phẩm'}</p>
           <span className="env-pill">Internal study lab</span>
 
-          {NAV_GROUPS.map((group) => (
+          {navFor(space).map((group) => (
             <div className="nav-group" key={group.label}>
               <p className="nav-group-label">{group.label}</p>
               {group.items.map((item) => (

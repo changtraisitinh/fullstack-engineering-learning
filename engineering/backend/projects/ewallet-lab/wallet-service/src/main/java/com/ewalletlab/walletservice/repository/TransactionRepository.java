@@ -26,4 +26,29 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     BigDecimal sumAmountByWalletIdAndTypeInSince(@Param("walletId") UUID walletId,
                                                   @Param("types") Collection<TransactionType> types,
                                                   @Param("since") Instant since);
+
+    /** Issue #16 — spending report, same sum but bounded on both sides: [from, to). */
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t "
+        + "WHERE t.walletId = :walletId AND t.type IN :types AND t.createdAt >= :from AND t.createdAt < :to")
+    BigDecimal sumAmountByWalletIdAndTypeInBetween(@Param("walletId") UUID walletId,
+                                                    @Param("types") Collection<TransactionType> types,
+                                                    @Param("from") Instant from,
+                                                    @Param("to") Instant to);
+
+    interface TypeTotalRow {
+        TransactionType getType();
+
+        BigDecimal getTotal();
+
+        long getTxCount();
+    }
+
+    /** Issue #16 — per-type totals for [from, to), aggregated in SQL rather than in Java. */
+    @Query("SELECT t.type AS type, SUM(t.amount) AS total, COUNT(t) AS txCount FROM Transaction t "
+        + "WHERE t.walletId = :walletId AND t.type IN :types AND t.createdAt >= :from AND t.createdAt < :to "
+        + "GROUP BY t.type")
+    List<TypeTotalRow> sumByType(@Param("walletId") UUID walletId,
+                                 @Param("types") Collection<TransactionType> types,
+                                 @Param("from") Instant from,
+                                 @Param("to") Instant to);
 }
