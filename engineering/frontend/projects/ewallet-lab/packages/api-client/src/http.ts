@@ -39,4 +39,5 @@ export const API_BASE = {
   luckyMoney: import.meta.env.VITE_LUCKY_MONEY_SERVICE_URL ?? 'http://localhost:8097',
   bnpl: import.meta.env.VITE_BNPL_SERVICE_URL ?? 'http://localhost:8098',
   loyalty: import.meta.env.VITE_LOYALTY_SERVICE_URL ?? 'http://localhost:8099',
+  fund: import.meta.env.VITE_FUND_SERVICE_URL ?? 'http://localhost:8100',
 };

@@ -116,3 +116,7 @@ spec:
             pathType: Prefix
             backend:
               service: { name: loyalty-service, port: { number: 8099 } }
+          - path: /funds
+            pathType: Prefix
+            backend:
+              service: { name: fund-service, port: { number: 8100 } }

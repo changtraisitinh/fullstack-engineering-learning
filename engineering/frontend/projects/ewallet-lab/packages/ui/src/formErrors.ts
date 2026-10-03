@@ -21,7 +21,8 @@ export function describeApiError(
     | 'bnpl-draw'
     | 'bnpl-repay'
     | 'spending-report'
-    | 'loyalty-redeem',
+    | 'loyalty-redeem'
+    | 'fund',
 ): string {
   if (status === undefined) {
     return 'Không kết nối được tới máy chủ. Kiểm tra lại các service đã chạy chưa rồi thử lại.';
@@ -46,6 +47,12 @@ export function describeApiError(
     if (context === 'bnpl-repay') {
       return 'Ví chính không đủ số dư để trả nợ (hoặc Ví Trả Sau không còn dư nợ). Nạp thêm tiền vào ví chính rồi thử lại.';
     }
+  }
+  if (context === 'fund') {
+    if (status === 403) return 'Bạn không có quyền thực hiện thao tác này (chỉ người tạo quỹ mới được mời thành viên và rút tiền).';
+    if (status === 404) return 'Không tìm thấy quỹ hoặc người dùng Ewallet Lab với số điện thoại này (lab không hỗ trợ mời SMS).';
+    if (status === 409) return 'Không thực hiện được: số dư (ví hoặc quỹ) không đủ, đã vượt hạn mức tháng, hoặc người này đã là thành viên.';
+    if (status === 400) return 'Thông tin chưa hợp lệ (số tiền nguyên từ 1.000đ đến 100.000.000đ).';
   }
   if (status === 409 && context === 'loyalty-redeem') {
     return 'Không đủ điểm để đổi số điểm này.';

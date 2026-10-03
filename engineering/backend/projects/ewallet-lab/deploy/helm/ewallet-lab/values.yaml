@@ -95,6 +95,10 @@ loyaltyService:
   port: 8099
   replicas: 1
 
+fundService:
+  port: 8100
+  replicas: 1
+
 frontend:
   port: 80
   replicas: 1

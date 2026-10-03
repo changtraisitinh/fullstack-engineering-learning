@@ -9,3 +9,4 @@ CREATE DATABASE ewallet_payment_request;
 CREATE DATABASE ewallet_lucky_money;
 CREATE DATABASE ewallet_bnpl;
 CREATE DATABASE ewallet_loyalty;
+CREATE DATABASE ewallet_fund;

@@ -361,3 +361,28 @@ cashback into the user's own main wallet. Rules, sources and the race strategy a
   rebuilt for the new flow.
 - **Verified**: `tsc` + build for mfe-wallet, shell builds. Headless Chromium against the harness and
   real local loyalty-service, wallet-service and Postgres. Not yet verified through minikube/Ingress.
+
+## 13. Quỹ nhóm (issue #14) — `FundHome.tsx` in mfe-transfer, calls fund-service directly
+
+Wired inside `mfe-transfer` (no new remote), same pattern as §7/§9: `TransferHome.tsx`'s `fund`
+tile is now `wired: true`, intercepted in `App.tsx`'s `onComingSoon` wrapper, and removed from
+`shell/src/screens/ComingSoon.tsx`'s `COPY` map. Backend rules, permission model and race strategy
+are in backend `DESIGN.md`'s "Quỹ nhóm (issue #14)" section.
+
+- **UX source is low-confidence**: the real momo.vn/quy-nhom page was only seen via search
+  snippets, and fetching it directly was blocked in this environment. The screens follow generic
+  e-wallet logic, not a verified MoMo layout.
+- **List view**: funds you belong to (balance, "Bạn là người tạo" / "Tạo bởi …") + a create form
+  (name, optional purpose).
+- **Detail view**: balance + purpose + member count; "Góp từ ví của tôi" for every member;
+  "Rút về ví của tôi" **only rendered for the creator** (the server also returns 403), with copy that
+  says so; members with their per-person contributed total; creator-only invite-by-phone (existing
+  accounts only, no SMS); full history (who contributed/withdrew, when, FAILED attempts struck
+  through).
+- Client-side checks (phone format, integer amount 1.000đ–100.000.000đ, withdraw ≤ balance) are UX
+  only. Errors use `describeApiError`'s new `'fund'` context.
+- **Build arg**: `mfe-transfer/Dockerfile` now takes `VITE_FUND_SERVICE_URL`. The shell must be
+  rebuilt too (the ComingSoon copy changed).
+- **Verified**: `tsc` + build for mfe-transfer, shell builds. Headless Chromium against the
+  mfe-transfer harness + real local fund-service/user-service/wallet-service/Postgres (fund detail
+  with members, totals and history). Not yet verified through minikube/Ingress.

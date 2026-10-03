@@ -22,12 +22,13 @@ logic sản phẩm ví phổ quát, không giả vờ có nguồn.
 | `bill-payment-service` | Java/Spring Boot | Tra cứu + thanh toán hoá đơn (mock biller), sở hữu DB riêng `ewallet_bill_payment` | — (bill aggregation là góc nhìn nội bộ MoMo, không public — toàn bộ service là mock, xem mục "Luồng bill payment") |
 | `payment-request-service` | Java/Spring Boot | Sở hữu `PaymentRequest` (link nhận tiền công khai — issue #3 — và nhắc trả tiền 1-1 nội bộ — issue #8), DB riêng `ewallet_payment_request`; tự nó **không** gọi wallet-service — mọi lần thanh toán đều gọi lại `transfer-service`'s `/transfers` thật | Payment-link: cấu trúc adapted từ MoMo Collection Link (merchant-side, KHÔNG phải spec P2P cá nhân đã xác nhận — xem mục dưới). Payment-reminder: luồng 4 bước đã xác minh trực tiếp từ momo.vn (xem mục dưới) |
 | `lucky-money-service` | Java/Spring Boot | Sở hữu `LuckyMoney` (lì xì 1-1 nội bộ, escrow thật — issue #10), DB riêng `ewallet_lucky_money`; **gọi thẳng `wallet-service`'s `/credit`/`/debit`** (khác `payment-request-service` — không đi qua `transfer-service` vì đây là escrow 2 bước theo thời gian, không phải "transfer ngay") | Hạn mức 1.000đ–20.000.000đ/lần và cơ chế 48h/tự động hoàn tiền đã xác minh trực tiếp từ momo.vn (xem mục dưới) |
+| `fund-service` | Java/Spring Boot | Quỹ nhóm (issue #14): N thành viên cùng góp vào 1 quỹ, lịch sử minh bạch theo từng người, chỉ người tạo được rút (MVP) — DB riêng `ewallet_fund`; tra thành viên qua `user-service`, di chuyển tiền qua `wallet-service`'s `/debit`/`/credit` | UX chỉ qua search-snippet momo.vn/quy-nhom (fetch trực tiếp bị chặn), phần còn lại thiết kế theo logic phổ quát (xem mục dưới) |
 | `loyalty-service` | Java/Spring Boot | **Mô phỏng** "Điểm thưởng" (issue #19): tích điểm từ thanh toán hoá đơn, hạng thành viên 12 tháng trượt, đổi điểm lấy hoàn tiền — DB riêng `ewallet_loyalty`; đọc `wallet-service`'s `/transactions`, trả thưởng qua `/credit` (type `LOYALTY_REDEMPTION`) | Tỷ lệ lấy cảm hứng từ chương trình thật (xem mục dưới); chương trình/tên hạng tự thiết kế — **không có đối tác/thương hiệu thật** |
 | `bnpl-service` | Java/Spring Boot | **Mô phỏng** "Ví Trả Sau" (issue #18): hạn mức tín dụng giả lập, sao kê theo tháng, phí trễ hạn — DB riêng `ewallet_bnpl`; trả nợ gọi `wallet-service`'s `/debit` (type `BNPL_REPAYMENT`) | Hạn mức/lãi/phí lấy từ momo.vn/vi-tra-sau (xác minh trực tiếp) — **sản phẩm là mô phỏng học tập, không có TCTD thật nào đứng sau** (xem mục dưới) |
 
 **Trạng thái**: `wallet-service`, `user-service`, `topup-service`, `mock-bank-gateway`,
 `transfer-service`, `bill-payment-service`, `payment-request-service`, `lucky-money-service`,
-`bnpl-service`, `loyalty-service` đã scaffold — đủ chạy luồng "đăng ký → liên kết NH → nạp tiền → số dư được cộng", P2P transfer nội bộ,
+`bnpl-service`, `loyalty-service`, `fund-service` đã scaffold — đủ chạy luồng "đăng ký → liên kết NH → nạp tiền → số dư được cộng", P2P transfer nội bộ,
 thanh toán hoá đơn mock, link nhận tiền + nhắc trả tiền, và lì xì 1-1.
 
 ## Vì sao mỗi service có DB riêng
@@ -717,3 +718,61 @@ constraint giống `BNPL_REPAYMENT` (thêm `'LOYALTY_REDEMPTION'` vào danh sác
 - chuyển tặng điểm cho người khác
 
 **Chưa verify qua minikube/Ingress.**
+
+## Quỹ nhóm (issue #14) — `fund-service`
+
+**Quyết định kiến trúc (người vận hành, comment trên issue #14)**: **(a) service mới `fund-service`,
+DB riêng `ewallet_fund`** — sở hữu `Fund`, `FundMember`, `FundEntry`; tự gọi `wallet-service`'s
+`/debit`/`/credit`, không có code path tiền riêng. Không mở rộng `payment-request-service`: domain
+khác hẳn (N người góp vào 1 quỹ tồn tại lâu dài, so với 1 yêu cầu 1-1 có thể hết hạn).
+
+**Nguồn UX — độ tin cậy thấp, ghi rõ**: issue chỉ có tóm tắt từ **search-snippet** momo.vn/quy-nhom.
+Lần fetch trực tiếp trong phiên này **bị chặn** bởi network egress proxy của môi trường. Vì vậy mọi
+chi tiết dưới đây là **thiết kế theo logic ví điện tử phổ quát**, trừ 3 ý lấy từ snippet: nhiều
+người cùng góp, mời qua danh bạ (lab: qua SĐT), lịch sử minh bạch theo từng người.
+
+| Quy tắc | Lab | Ghi chú |
+|---|---|---|
+| Ai mời thành viên | chỉ người tạo | Tự thiết kế; chỉ mời được user **đã có tài khoản** (tra `user-service` theo SĐT, giống lucky-money). SĐT không có tài khoản → 404, không giả vờ "đã gửi lời mời SMS" |
+| Ai góp tiền | mọi thành viên | Không phải thành viên → 403 |
+| Ai rút tiền | **chỉ người tạo** (MVP) | Đơn giản hoá có chủ đích theo issue — không có voting/đa chữ ký. Người khác → 403 |
+| Ai xem quỹ | chỉ thành viên | Người ngoài → 403 |
+| Số tiền mỗi lần | 1.000đ – 100.000.000đ, số nguyên | Trần = hạn mức P2P/lần của #6 — góp quỹ là chuyển tiền cho quỹ chung, dùng chung trần thay vì bịa số mới |
+| Số thành viên tối đa | 50 | Tự đặt (không có nguồn), cấu hình `FUND_MAX_MEMBERS` |
+| TransactionType | góp = `TRANSFER_OUT`, rút = `TRANSFER_IN` | Tái dùng như lucky-money → không cần ALTER constraint. Góp quỹ **có** tính vào hạn mức tháng #7 (giống chuyển tiền P2P) |
+| Lãi "Sinh lời trên quỹ" | **không làm** | Ngoài phạm vi theo issue — ticket follow-up riêng |
+| Giải thể quỹ | không có thao tác riêng | Người tạo rút hết số dư là đủ cho MVP |
+
+### Race condition — thứ tự "claim trước, move tiền sau"
+
+- **Góp tiền**: ghi entry `PENDING` → debit ví thành viên → **chỉ sau khi debit thành công** mới
+  khoá dòng `funds` (`SELECT ... FOR UPDATE`) và cộng vào số dư, entry `COMPLETED`. Quỹ không bao giờ
+  hiển thị tiền chưa thật sự bị trừ. Debit lỗi → `FAILED`, số dư quỹ không đổi.
+- **Rút tiền**: khoá dòng quỹ, kiểm tra quyền + số dư, **trừ số dư + ghi `PENDING`, commit** → mới
+  credit ví người tạo → `COMPLETED`. Credit lỗi → cộng lại số dư quỹ, `FAILED`. Rút đồng thời đọc
+  lại số dư đã giảm → không thể rút 2 lần cùng 1 đồng.
+- `open-in-view: false` ngay từ đầu (bài học của loyalty-service), và test race chạy qua **HTTP
+  thật** (`@SpringBootTest(RANDOM_PORT)`), không chỉ gọi service.
+- **Gap đã biết**: crash giữa debit thành công và bước cộng số dư → entry `PENDING` treo, tiền đã
+  trừ khỏi ví thành viên mà chưa vào quỹ. Cùng lớp gap của các service khác (không có outbox giữa
+  các service).
+
+**Đã verify**: 4 test (H2, qua HTTP):
+- 12 lần góp đồng thời từ 3 thành viên → số dư đúng, 12 entry `COMPLETED`.
+- 12 lần rút 100k đồng thời trên quỹ 300k → đúng 3 thành công, credit đúng 3 lần.
+- Đủ các case quyền 403/409.
+- Debit/credit lỗi giữ quỹ nhất quán.
+
+Bỏ khoá dòng thì 2/2 test race fail. Trên Postgres 16 thật, với 3 user đăng ký qua `user-service`
+thật:
+- Mời 2 thành viên → 200. SĐT lạ → 404. Thành viên thử mời → 403.
+- 10 lần góp đồng thời (5 của An + 5 của Bình, mỗi lần 100k) → 9×200, 1×409. Lần 409 là do
+  `wallet-service` hết lượt retry optimistic-lock khi 5 debit đồng thời trên **cùng ví** An (hành vi
+  có chủ đích của issue #5, trả 409 để client thử lại); entry đó `FAILED` và ví An chỉ bị trừ 400k
+  → tiền khớp.
+- Thành viên thử rút → 403.
+- 10 lần người tạo rút 300k đồng thời trên quỹ 900k → **3×200, 7×409**, quỹ còn 0, ví người tạo
+  +900k đúng.
+- Người ngoài xem quỹ → 403.
+
+**Chưa verify qua minikube/Ingress.** Cluster đang chạy cần `CREATE DATABASE ewallet_fund`.
