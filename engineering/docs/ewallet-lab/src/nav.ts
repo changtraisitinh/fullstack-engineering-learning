@@ -1,9 +1,15 @@
 /**
  * Single source of truth for the sidebar AND the router. To add a new page:
- *   1. Add one entry here (pick an existing group, or add a new group object).
+ *   1. Add one entry here, in the right space (DEV_NAV_GROUPS or BIZ_NAV_GROUPS).
+ *      Business page ids MUST start with "biz-" — see spaceOf().
  *   2. Add `"your-id": YourComponent` to the registry in src/pages/index.tsx.
  * That's it — App.tsx renders both the sidebar and the active page purely from
- * this list plus the registry; no other file needs to change.
+ * these lists plus the registry; no other file needs to change.
+ *
+ * Two "spaces" (issue #17): Developer (the original docs) and Business (product
+ * business rules, written for non-engineers). One flat id namespace for the
+ * router, with a reserved "biz-" prefix, so a page id alone tells which space it
+ * belongs to — see the README's "Developer / Business spaces" section.
  */
 export type NavItem = {
   id: string;
@@ -17,7 +23,9 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-export const NAV_GROUPS: NavGroup[] = [
+export type Space = 'developer' | 'business';
+
+export const DEV_NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
     items: [
@@ -67,8 +75,45 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+export const BIZ_NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Tổng quan',
+    items: [{ id: 'biz-overview', label: 'Business space là gì' }],
+  },
+  {
+    label: 'Quy tắc xuyên suốt',
+    items: [{ id: 'biz-limits', label: 'Giới hạn & an toàn giao dịch', badge: 'Quan trọng' }],
+  },
+  {
+    label: 'Theo nhóm tính năng',
+    items: [
+      { id: 'biz-payments', label: 'Nạp/rút, chuyển tiền & thanh toán' },
+      { id: 'biz-requests', label: 'Nhận tiền, nhắc trả & lì xì' },
+      { id: 'biz-personal', label: 'Chi tiêu, điểm thưởng, quỹ & trả sau' },
+    ],
+  },
+  {
+    label: 'Sắp có',
+    items: [{ id: 'biz-coming-soon', label: 'Chưa làm & lý do', soon: true }],
+  },
+];
+
+/** Default page of each space. Developer stays the site default — old links/behavior unchanged. */
 export const DEFAULT_PAGE = 'overview';
+export const DEFAULT_PAGE_BY_SPACE: Record<Space, string> = {
+  developer: DEFAULT_PAGE,
+  business: 'biz-overview',
+};
+
+export function navFor(space: Space): NavGroup[] {
+  return space === 'business' ? BIZ_NAV_GROUPS : DEV_NAV_GROUPS;
+}
+
+/** A page's space is derived from its id, so a shared #biz-... link always opens Business. */
+export function spaceOf(id: string): Space {
+  return id.startsWith('biz-') ? 'business' : 'developer';
+}
 
 export function isKnownPage(id: string): boolean {
-  return NAV_GROUPS.some((g) => g.items.some((i) => i.id === id));
+  return navFor(spaceOf(id)).some((g) => g.items.some((i) => i.id === id));
 }

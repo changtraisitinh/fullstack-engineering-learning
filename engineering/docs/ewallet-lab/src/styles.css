@@ -132,6 +132,38 @@ code{
   font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
   color:var(--faint); font-weight:600; margin:0 0 22px 40px;
 }
+/* Issue #17 — Developer / Business space switch, same segmented look as .theme-toggle */
+.space-switch{
+  display:flex; gap:4px; margin:14px 0 10px; padding:3px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+}
+.space-switch button{
+  flex:1; font:inherit; font-size:12.5px; font-weight:700; color:var(--muted);
+  background:transparent; border:0; border-radius:6px; padding:7px 0; cursor:pointer;
+  font-family:var(--font-display);
+}
+.space-switch button.active{ background:var(--surface); color:var(--accent-ink); box-shadow:var(--shadow); }
+.space-switch + .brand-sub{ margin-left:0; }
+
+/* Business space feature cards */
+.biz-feature{
+  background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:16px 18px; margin:14px 0; box-shadow:var(--shadow);
+}
+.biz-feature h3{ margin:0 0 4px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.biz-feature .biz-what{ color:var(--muted); margin:0 0 10px; }
+.biz-feature ul{ margin:6px 0 0; padding-left:20px; }
+.biz-feature li{ margin:4px 0; }
+.biz-source{ font-size:12.5px; color:var(--faint); margin:10px 0 0; }
+.biz-status{
+  font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  padding:2px 8px; border-radius:99px; white-space:nowrap;
+}
+.biz-status.live{ color:var(--accent-ink); background:var(--accent-soft); }
+.biz-status.soon{ color:var(--amber); background:var(--amber-soft); }
+.biz-table{ width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:14px; }
+.biz-table th, .biz-table td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+.biz-table th{ font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--faint); }
 .env-pill{
   display:inline-flex; align-items:center; gap:6px;
   font-size:11.5px; font-weight:600; color:var(--amber);
