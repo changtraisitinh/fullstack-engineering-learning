@@ -38,7 +38,7 @@ const MAIN_GRID: { key: string; icon: string; label: string; more?: boolean; rea
   { key: 'bill-payment', icon: 'receipt_long', label: 'Thanh toán\nhoá đơn', real: true },
   { key: 'phone-topup', icon: 'call', label: 'Nạp tiền\nđiện thoại' },
   { key: 'phone-data', icon: 'signal_cellular_alt', label: 'Data 4G/5G' },
-  { key: 'spending', icon: 'bar_chart', label: 'Quản lý\nchi tiêu' },
+  { key: 'spending', icon: 'bar_chart', label: 'Quản lý\nchi tiêu', real: true },
   { key: 'more-services', icon: 'more_horiz', label: 'Xem thêm\ndịch vụ', more: true },
 ];
 
@@ -165,6 +165,7 @@ export default function Home({
   onComingSoon,
   onOpenNotifications,
   onBnpl,
+  onSpending,
 }: {
   session: Session;
   onTopup: () => void;
@@ -177,6 +178,8 @@ export default function Home({
   /** Issue #18 — optional so an older shell (deployed separately) still works: falls back to the
    * generic coming-soon screen. */
   onBnpl?: () => void;
+  /** Issue #16 — optional for the same reason as onBnpl. */
+  onSpending?: () => void;
 }) {
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -206,6 +209,7 @@ export default function Home({
     if (item.more) onMoreServices();
     else if (item.key === 'transfer') onTransfer();
     else if (item.key === 'bill-payment') onBillPayment();
+    else if (item.key === 'spending') (onSpending ?? (() => onComingSoon('spending')))();
     else if (item.real) onTransfer();
     else onComingSoon(item.key);
   }
@@ -297,7 +301,7 @@ export default function Home({
         Chi tiêu tháng {monthLabel}
       </h2>
       <Card>
-        <div style={{ fontSize: 11.5, color: 'var(--el-faint)', marginBottom: 4 }}>Tổng chi (nạp/rút, chuyển đi, hoá đơn)</div>
+        <div style={{ fontSize: 11.5, color: 'var(--el-faint)', marginBottom: 4 }}>Tổng chi (rút tiền, chuyển đi, hoá đơn)</div>
         <div
           style={{
             fontFamily: 'var(--el-font-display)',
@@ -308,6 +312,14 @@ export default function Home({
         >
           {loading ? '···' : formatVnd(monthlySpend(transactions))}
         </div>
+        {onSpending && (
+          <button
+            onClick={onSpending}
+            style={{ background: 'none', border: 0, padding: 0, marginTop: 8, color: 'var(--el-accent)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Xem báo cáo chi tiêu ›
+          </button>
+        )}
       </Card>
 
       {/* Mẹo hôm nay — simple rule-based tip, plainly not real AI */}

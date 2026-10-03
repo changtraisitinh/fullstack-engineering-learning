@@ -2,6 +2,8 @@ package com.ewalletlab.walletservice.web;
 
 import com.ewalletlab.walletservice.domain.Transaction;
 import com.ewalletlab.walletservice.domain.Wallet;
+import com.ewalletlab.walletservice.service.SpendingPeriod;
+import com.ewalletlab.walletservice.service.SpendingReportService;
 import com.ewalletlab.walletservice.service.WalletService;
 import com.ewalletlab.walletservice.web.dto.AdjustBalanceRequest;
 import com.ewalletlab.walletservice.web.dto.WalletResponse;
@@ -10,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,9 +28,11 @@ import java.util.UUID;
 public class WalletController {
 
     private final WalletService walletService;
+    private final SpendingReportService spendingReportService;
 
-    public WalletController(WalletService walletService) {
+    public WalletController(WalletService walletService, SpendingReportService spendingReportService) {
         this.walletService = walletService;
+        this.spendingReportService = spendingReportService;
     }
 
     @GetMapping("/{userId}/balance")
@@ -38,6 +43,19 @@ public class WalletController {
     @GetMapping("/{userId}/transactions")
     public List<Transaction> getTransactions(@PathVariable UUID userId) {
         return walletService.history(userId);
+    }
+
+    /** Issue #16 — public (browser-facing), same userId-in-path convention as the endpoints above. */
+    @GetMapping("/{userId}/spending-report")
+    public SpendingReportService.Report getSpendingReport(@PathVariable UUID userId,
+                                                          @RequestParam(defaultValue = "month") String period) {
+        SpendingPeriod parsed;
+        try {
+            parsed = SpendingPeriod.parse(period);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "period phải là week hoặc month");
+        }
+        return spendingReportService.report(userId, parsed);
     }
 
     /** Internal — called by transfer-service (credit receiver) and, indirectly via Kafka, topup-service. */

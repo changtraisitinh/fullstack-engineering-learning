@@ -19,7 +19,8 @@ export function describeApiError(
     | 'lucky-money'
     | 'bnpl-open'
     | 'bnpl-draw'
-    | 'bnpl-repay',
+    | 'bnpl-repay'
+    | 'spending-report',
 ): string {
   if (status === undefined) {
     return 'Không kết nối được tới máy chủ. Kiểm tra lại các service đã chạy chưa rồi thử lại.';
@@ -44,6 +45,9 @@ export function describeApiError(
     if (context === 'bnpl-repay') {
       return 'Ví chính không đủ số dư để trả nợ (hoặc Ví Trả Sau không còn dư nợ). Nạp thêm tiền vào ví chính rồi thử lại.';
     }
+  }
+  if (status === 400 && context === 'spending-report') {
+    return 'Kỳ báo cáo không hợp lệ (chỉ hỗ trợ tuần hoặc tháng).';
   }
   if (status === 400 && context === 'bnpl-open') {
     return 'Cần đọc và xác nhận điều khoản mô phỏng trước khi mở Ví Trả Sau.';

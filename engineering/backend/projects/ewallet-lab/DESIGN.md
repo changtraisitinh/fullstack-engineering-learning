@@ -587,3 +587,47 @@ daemon/minikube. Đã verify: build + 12 test (`./gradlew test`), và toàn bộ
 mua sắm → trễ hạn qua clock offset → trả 1 phần/toàn bộ → race 12 request → hạn mức tháng) với
 `wallet-service` + `bnpl-service` thật trên Postgres 16 thật chạy local. Vẫn cần chạy lại các bước
 Acceptance criteria qua `http://api.ewallet-lab.local` trước khi đóng issue.
+
+## Báo cáo chi tiêu tự động (issue #16) — `wallet-service` `GET /wallets/{userId}/spending-report`
+
+**Nguồn**: momo.vn/quan-ly-chi-tieu (agent-designer fetch trực tiếp 2026-10-03) — "Quản lý chi
+tiêu" thật có 3 điểm vào và 4 tab: **Sổ chi tiêu** (danh mục tự đặt), **Ngân sách**, **Báo cáo**
+(tuần/tháng), **Chatbot trợ lý chi tiêu**. Lab chỉ làm **tab "Báo cáo"**, phần dùng được 100% dữ
+liệu ledger đã có.
+
+**Không phải điểm rẽ kiến trúc**: read-only trên bảng `transactions` sẵn có của `wallet-service`
+— không bảng mới, không service mới, không gọi cross-service.
+
+- **Định nghĩa "chi tiêu" giữ nguyên** như `SPEND_TYPES` đã có ở `Home.tsx`: `TRANSFER_OUT +
+  BILL_PAYMENT + WITHDRAW` (`SpendingReportService.SPEND_TYPES`). Không tính `TOPUP`/`TRANSFER_IN`/
+  `REFUND` (tiền vào). **`BNPL_REPAYMENT` (issue #18) cũng không tính** — trả nợ Ví Trả Sau là thanh
+  toán cho các khoản mua trước đó (vốn không đi qua ledger này), và nằm ngoài định nghĩa cố định
+  của ticket.
+- **Kỳ báo cáo** (`?period=week|month`, mặc định `month`; giá trị khác → 400): theo lịch, không
+  phải cửa sổ trượt — tuần = từ thứ Hai 00:00, tháng = từ ngày 1 00:00, tới `now`. Dùng **cùng
+  timezone với hạn mức tháng của #7** (`ZoneId.systemDefault()` trong
+  `WalletMutationExecutor.currentMonthStart`) để "tháng này" của báo cáo và của hạn mức là một.
+- **Aggregate trong SQL** (`TransactionRepository.sumByType`: JPQL `GROUP BY t.type`, khoảng
+  `[from, to)`), không load toàn bộ lịch sử rồi lọc trong Java. Kết quả luôn đủ 3 loại theo thứ tự
+  cố định (loại không có giao dịch = 0).
+- **So sánh kỳ trước** (nice-to-have, đã làm): `previousTotal` = tổng của **cả** tuần/tháng trước
+  (`[đầu kỳ trước, đầu kỳ này)`). UI ghi rõ kỳ này chưa kết thúc — so sánh kỳ đang dở với cả kỳ
+  trước, không phải "cùng kỳ".
+- **Đọc không tạo ví**: user chưa có ví → trả toàn 0, không gọi `getOrCreateWallet` (khác
+  `/balance`, `/transactions`).
+- Public (browser gọi trực tiếp qua Ingress), cùng convention `userId` trên path, không thêm auth.
+
+**Cắt khỏi phạm vi** (không tự mở rộng — cần ticket riêng): danh mục tự đặt tên, "Ngân sách"
+(giới hạn + cảnh báo), "Chatbot trợ lý chi tiêu" (không có hạ tầng AI), "Thêm giao dịch thủ công
+ngoài ví" (cần bảng mới riêng).
+
+**Đã verify**: `SpendingReportServiceTest` (`@DataJpaTest`/H2 — biên kỳ chính xác: thứ Hai 00:00,
+ngày 1 00:00, 23:59 ngày cuối tháng trước; loại trừ TOPUP/TRANSFER_IN/REFUND/BNPL_REPAYMENT; user
+không có ví không bị tạo ví). Chạy thật trên Postgres 16 local: TOPUP 1tr + TRANSFER_IN 20k +
+TRANSFER_OUT 100k/30k + BILL_PAYMENT 50k + WITHDRAW 200k + BNPL_REPAYMENT 10k → tổng 380.000đ, 4
+giao dịch, breakdown đúng; `period=year` → 400. **Chưa verify qua minikube/Ingress** (môi trường
+không có Docker daemon).
+
+Ghi chú cho ticket: FYI trong issue nói `ComingSoon.tsx`'s `COPY['qr']` là dead code — **không
+đúng**: nút "Quét mọi QR" nổi giữa bottom nav (`shell/src/App.tsx`, `onSpecialClick`) vẫn mở
+`coming-soon` với feature `qr`, nên entry đó vẫn được dùng và được giữ nguyên.

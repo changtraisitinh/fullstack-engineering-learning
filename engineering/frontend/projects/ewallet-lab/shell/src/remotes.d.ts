@@ -17,8 +17,14 @@ declare module 'mfe_wallet/Home' {
     onComingSoon: (feature: string) => void;
     onOpenNotifications: () => void;
     onBnpl?: () => void;
+    onSpending?: () => void;
   }>;
   export default Home;
+}
+
+declare module 'mfe_wallet/SpendingReport' {
+  const SpendingReport: ComponentType<{ session: Session; onBack: () => void }>;
+  export default SpendingReport;
 }
 
 declare module 'mfe_wallet/BnplWallet' {

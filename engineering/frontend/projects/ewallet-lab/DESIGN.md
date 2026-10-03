@@ -313,3 +313,28 @@ Backend decisions (why a standalone `bnpl-service`, the late-fee model, claim-be
   Postgres: open via modal (confirm disabled until checkbox), draw, failed repay (empty wallet →
   409 copy + FAILED row in history). **Not yet verified** through minikube/Ingress
   (`shell.ewallet-lab.local`) — no Docker daemon in the environment this was built in.
+
+## 11. Spending report (issue #16) — `SpendingReport.tsx`, calls wallet-service's `/spending-report`
+
+Backend scope/definition decisions are in backend `DESIGN.md`'s "Báo cáo chi tiêu tự động (issue
+#16)" section; this covers the UI side.
+
+- **Entry points**: `Home.tsx`'s `MAIN_GRID` tile `spending` is now `real: true` and routes through
+  a new optional `onSpending` prop (falls back to coming-soon with an older shell) → shell flow
+  `{ name: 'spending' }` → `mfe_wallet/SpendingReport` (new expose, no new remote). The Home "Chi
+  tiêu tháng …" card also gets a "Xem báo cáo chi tiêu ›" link — mirrors MoMo's real second entry
+  point ("Lịch sử GD > Mở Quản lý chi tiêu"). That card's label was corrected from "nạp/rút" to
+  "rút tiền" — TOPUP was never counted.
+- **Screen**: "Tuần này / Tháng này" segmented tabs; total + transaction count + date range;
+  comparison with the whole previous week/month (explicitly labeled "Kỳ này chưa kết thúc"); per-type
+  rows (Chuyển tiền đi / Thanh toán hoá đơn / Rút tiền về ngân hàng) with count and a relative bar.
+  `packages/ui`'s `ProgressBar` is a loading spinner, not a value bar, so it's used only for the
+  loading state; the bars are plain inline divs with an `aria-label` giving the share of total.
+- A footnote states what's counted and what isn't (incl. Ví Trả Sau repayments), and that custom
+  categories, budgets and the spending assistant are not in the lab.
+- `SpendingReport`/`SpendType` types + `walletService.getSpendingReport` added to api-client;
+  `describeApiError` gets a `'spending-report'` context. No new build arg needed (same
+  wallet-service URL mfe-wallet already uses).
+- **Verified**: `tsc --noEmit` + `npm run build` for mfe-wallet; shell builds. Driven in headless
+  Chromium (standalone harness → real local wallet-service + Postgres): Home link → report, both
+  tabs load with correct totals. Not yet verified through minikube/Ingress.
