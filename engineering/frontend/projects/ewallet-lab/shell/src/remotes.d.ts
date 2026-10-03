@@ -18,8 +18,14 @@ declare module 'mfe_wallet/Home' {
     onOpenNotifications: () => void;
     onBnpl?: () => void;
     onSpending?: () => void;
+    onLoyalty?: () => void;
   }>;
   export default Home;
+}
+
+declare module 'mfe_wallet/LoyaltyRewards' {
+  const LoyaltyRewards: ComponentType<{ session: Session; onBack: () => void }>;
+  export default LoyaltyRewards;
 }
 
 declare module 'mfe_wallet/SpendingReport' {

@@ -16,6 +16,7 @@ export default defineConfig({
         './ReceiveQr': './src/screens/ReceiveQr.tsx',
         './BnplWallet': './src/screens/BnplWallet.tsx',
         './SpendingReport': './src/screens/SpendingReport.tsx',
+        './LoyaltyRewards': './src/screens/LoyaltyRewards.tsx',
       },
       shared: {
         react: { singleton: true, requiredVersion: false },

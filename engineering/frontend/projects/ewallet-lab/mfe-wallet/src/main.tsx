@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import AllServices from './screens/AllServices';
 import BnplWallet from './screens/BnplWallet';
+import LoyaltyRewards from './screens/LoyaltyRewards';
 import SpendingReport from './screens/SpendingReport';
 import History from './screens/History';
 import Home from './screens/Home';
@@ -16,7 +17,7 @@ const mockSession: Session = {
 };
 
 function Harness() {
-  const [tab, setTab] = useState<'home' | 'history' | 'all-services' | 'notifications' | 'receive' | 'bnpl' | 'spending'>('home');
+  const [tab, setTab] = useState<'home' | 'history' | 'all-services' | 'notifications' | 'receive' | 'bnpl' | 'spending' | 'loyalty'>('home');
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, padding: 12, background: '#fffbe6' }}>
@@ -27,6 +28,7 @@ function Harness() {
         <button onClick={() => setTab('receive')}>ReceiveQr</button>
         <button onClick={() => setTab('bnpl')}>BnplWallet</button>
         <button onClick={() => setTab('spending')}>SpendingReport</button>
+        <button onClick={() => setTab('loyalty')}>LoyaltyRewards</button>
         <span style={{ fontSize: 12 }}>standalone dev harness — no shell, mock session</span>
       </div>
       {tab === 'home' && (
@@ -41,6 +43,7 @@ function Harness() {
           onOpenNotifications={() => setTab('notifications')}
           onBnpl={() => setTab('bnpl')}
           onSpending={() => setTab('spending')}
+          onLoyalty={() => setTab('loyalty')}
         />
       )}
       {tab === 'history' && <History session={mockSession} />}
@@ -49,6 +52,7 @@ function Harness() {
       {tab === 'receive' && <ReceiveQr session={mockSession} onBack={() => setTab('home')} />}
       {tab === 'bnpl' && <BnplWallet session={mockSession} onBack={() => setTab('home')} />}
       {tab === 'spending' && <SpendingReport session={mockSession} onBack={() => setTab('home')} />}
+      {tab === 'loyalty' && <LoyaltyRewards session={mockSession} onBack={() => setTab('home')} />}
     </div>
   );
 }
